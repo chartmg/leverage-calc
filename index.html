@@ -17,7 +17,12 @@
     }
     h1 {
       font-size: 28px;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
+    }
+    #btcPrice {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #00ffcc;
     }
     .input-group {
       margin-bottom: 15px;
@@ -56,10 +61,25 @@
       max-width: 400px;
       width: 100%;
     }
+    .tradingview-widget-container {
+      margin-top: 40px;
+      width: 100%;
+      max-width: 900px;
+    }
   </style>
 </head>
 <body>
   <h1>찬호 수익 계산기 (시장가/지정가)</h1>
+
+  <div class="input-group">
+    <label for="currency">표시 통화 선택</label>
+    <select id="currency" onchange="fetchBTCPrice()">
+      <option value="krw">KRW</option>
+      <option value="usd">USD</option>
+    </select>
+  </div>
+
+  <p id="btcPrice">📉 BTC 시세: 불러오는 중...</p>
 
   <div class="input-group">
     <label for="investment">투자금 (원)</label>
@@ -88,7 +108,45 @@
 
   <div id="result"></div>
 
+  <!-- 비트코인 차트 -->
+  <div class="tradingview-widget-container">
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript">
+      new TradingView.widget({
+        "width": "100%",
+        "height": 500,
+        "symbol": "BINANCE:BTCUSDT",
+        "interval": "1",
+        "timezone": "Asia/Seoul",
+        "theme": "dark",
+        "style": "1",
+        "locale": "ko",
+        "toolbar_bg": "#f1f3f6",
+        "hide_top_toolbar": true,
+        "save_image": false,
+        "container_id": "tradingview_01"
+      });
+    </script>
+    <div id="tradingview_01"></div>
+  </div>
+
   <script>
+    async function fetchBTCPrice() {
+      const currency = document.getElementById("currency").value;
+      try {
+        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${currency}`);
+        const data = await res.json();
+        const price = data.bitcoin[currency].toLocaleString();
+        const label = currency === 'krw' ? '₩' : '$';
+        document.getElementById("btcPrice").innerText = `📉 BTC 시세: ${label}${price}`;
+      } catch (error) {
+        document.getElementById("btcPrice").innerText = "⚠️ 시세 불러오기 실패";
+      }
+    }
+
+    fetchBTCPrice();
+    setInterval(fetchBTCPrice, 30000);
+
     function calculate() {
       const investment = parseFloat(document.getElementById('investment').value);
       const leverage = parseFloat(document.getElementById('leverage').value);
